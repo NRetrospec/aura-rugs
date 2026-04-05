@@ -5,7 +5,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import Home from "@/pages/Home";
 import Gallery from "@/pages/Gallery";
 import Booking from "@/pages/Booking";
@@ -37,7 +36,6 @@ const App = () => (
       <BrowserRouter>
         <Navbar />
         <AnimatedRoutes />
-        <Footer />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
