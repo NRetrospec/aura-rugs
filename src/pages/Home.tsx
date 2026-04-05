@@ -66,19 +66,30 @@ const Home = () => {
   const intro1Src = isMobile ? "/introvids/moblieintro1.MP4" : "/introvids/Intro1.MP4";
   const intro2Src = isMobile ? "/introvids/moblieintro2.MP4" : "/introvids/Intro2.MP4";
 
-  // On mount: if returning after intro1 already played, jump straight to Intro2
+  // Safari/iOS autoplay hardening for the home video
   useEffect(() => {
-    if (sessionIntro1Done && videoRef.current) {
-      videoRef.current.play().catch(() => {});
-    }
-  }, []);
+    const v = videoRef.current;
+    if (!v) return;
 
-  // When isIntro2 flips, ensure the new src plays
-  useEffect(() => {
-    if (isIntro2 && videoRef.current) {
-      videoRef.current.play().catch(() => {});
-    }
-  }, [isIntro2]);
+    const play = () => v.play().catch(() => {});
+
+    // Attempt immediately (Chrome/Firefox/Edge) + on mount return
+    play();
+
+    // Safari fires canplay before honouring autoPlay
+    v.addEventListener("canplay", play);
+
+    // iOS pauses media when app is backgrounded — resume on visibility
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") play();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      v.removeEventListener("canplay", play);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [isIntro2]); // re-run when src swaps (intro1 → intro2)
 
   const handleVideoEnded = () => {
     sessionIntro1Done = true;
