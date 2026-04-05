@@ -2,6 +2,8 @@ import { motion } from "framer-motion";
 import { Palette, Ruler, Clock, Truck, ShieldCheck, MessageCircle } from "lucide-react";
 import PageTransition from "@/components/PageTransition";
 import { useBgVideo } from "@/hooks/useBgVideo";
+import BackgroundVideo from "@/components/BackgroundVideo";
+
 
 const steps = [
   { icon: MessageCircle, title: "Consultation",  desc: "Share your vision — colors, patterns, dimensions. We'll help refine it." },
@@ -27,14 +29,7 @@ const Process = () => {
       <section className="relative min-h-screen">
         {/* Video fixed to viewport — stays in place while content scrolls */}
         <div className="fixed inset-0 -z-10">
-          <video
-            src={bgVideo}
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="w-full h-full object-cover object-center"
-          />
+          <BackgroundVideo src={bgVideo} className="w-full h-full object-cover object-center" />
           <div className="absolute inset-0 bg-background/25" />
         </div>
 

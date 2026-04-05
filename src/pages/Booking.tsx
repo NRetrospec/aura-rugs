@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import PageTransition from "@/components/PageTransition";
 import { useBgVideo } from "@/hooks/useBgVideo";
+import BackgroundVideo from "@/components/BackgroundVideo";
 
 const Booking = () => {
   const bgVideo = useBgVideo();
@@ -22,14 +23,7 @@ const Booking = () => {
       <section className="relative min-h-screen">
         {/* Video fixed to viewport — stays in place while form scrolls */}
         <div className="fixed inset-0 -z-10">
-          <video
-            src={bgVideo}
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="w-full h-full object-cover object-center"
-          />
+          <BackgroundVideo src={bgVideo} className="w-full h-full object-cover object-center" />
           <div className="absolute inset-0 bg-background/25" />
         </div>
 

@@ -4,6 +4,7 @@ import PageTransition from "@/components/PageTransition";
 import RugCard from "@/components/RugCard";
 import heroImage from "@/assets/hero-rug.jpg";
 import { useBgVideo } from "@/hooks/useBgVideo";
+import BackgroundVideo from "@/components/BackgroundVideo";
 
 const allRugs = [
   { name: "Psychedelic Wave", price: 1250, image: heroImage, category: "abstract" },
@@ -30,15 +31,7 @@ const Gallery = () => {
   return (
     <PageTransition>
       <section className="relative min-h-screen overflow-hidden">
-        {/* Video Background */}
-        <video
-          src={bgVideo}
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover object-center"
-        />
+        <BackgroundVideo src={bgVideo} className="absolute inset-0 w-full h-full object-cover object-center" />
         <div className="absolute inset-0 bg-background/25" />
 
         <div className="relative z-10 min-h-screen pt-32 pb-20 px-6">
