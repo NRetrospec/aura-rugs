@@ -46,11 +46,13 @@ const CompactCard = ({ name, price, image }: { name: string; price: number; imag
 );
 
 const Home = () => {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const video1Ref = useRef<HTMLVideoElement>(null); // plays intro1
+  const video2Ref = useRef<HTMLVideoElement>(null); // preloads + plays intro2
+  // Ref-based guard prevents double-transition regardless of closure staleness
+  const transitionedRef = useRef(sessionIntro1Done);
 
-  // Detect mobile synchronously so the correct src is used on first render
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
-  const [isIntro2, setIsIntro2] = useState(sessionIntro1Done);
+  const [isIntro2Active, setIsIntro2Active] = useState(sessionIntro1Done);
   const [showGallery, setShowGallery] = useState(sessionIntro1Done);
   const [currentPage, setCurrentPage] = useState(0);
 
@@ -66,20 +68,15 @@ const Home = () => {
   const intro1Src = isMobile ? "/introvids/moblieintro1.MP4" : "/introvids/Intro1.MP4";
   const intro2Src = isMobile ? "/introvids/moblieintro2.MP4" : "/introvids/Intro2.MP4";
 
-  // Safari/iOS autoplay hardening for the home video
+  // Safari/iOS autoplay hardening — targets whichever video is currently active
   useEffect(() => {
-    const v = videoRef.current;
+    const v = isIntro2Active ? video2Ref.current : video1Ref.current;
     if (!v) return;
 
     const play = () => v.play().catch(() => {});
-
-    // Attempt immediately (Chrome/Firefox/Edge) + on mount return
     play();
-
-    // Safari fires canplay before honouring autoPlay
     v.addEventListener("canplay", play);
 
-    // iOS pauses media when app is backgrounded — resume on visibility
     const onVisibility = () => {
       if (document.visibilityState === "visible") play();
     };
@@ -89,13 +86,36 @@ const Home = () => {
       v.removeEventListener("canplay", play);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [isIntro2]); // re-run when src swaps (intro1 → intro2)
+  }, [isIntro2Active]);
 
-  const handleVideoEnded = () => {
+  /**
+   * Crossfade from intro1 → intro2.
+   * Called either from onTimeUpdate (~0.5 s early, Plan A overlap)
+   * or from onEnded (fallback if timeupdate was late).
+   */
+  const doTransition = () => {
+    if (transitionedRef.current) return;
+    transitionedRef.current = true;
     sessionIntro1Done = true;
-    setIsIntro2(true);
+
+    // Start video2 playing before flipping opacity so there's no black frame
+    video2Ref.current?.play().catch(() => {});
+    setIsIntro2Active(true);
     setTimeout(() => setShowGallery(true), 400);
   };
+
+  // Plan A: begin crossfade 0.5 s before intro1 finishes
+  const handleTimeUpdate = () => {
+    const v = video1Ref.current;
+    if (!v || transitionedRef.current) return;
+    if (!isFinite(v.duration) || v.duration === 0) return;
+
+    const timeLeft = v.duration - v.currentTime;
+    if (timeLeft <= 0.5) doTransition();
+  };
+
+  // Plan B fallback: onEnded fires if timeupdate missed the window
+  const handleVideoEnded = () => doTransition();
 
   const visibleRugs = allRugs.slice(
     currentPage * CARDS_PER_PAGE,
@@ -108,18 +128,41 @@ const Home = () => {
   return (
     <PageTransition>
       <section className="h-screen overflow-hidden relative bg-background">
-        {/* Video — mobile gets its own portrait-optimised clips */}
+        {/*
+          Two videos stacked. video2 is always mounted (preload="auto") so the
+          browser buffers it while intro1 plays. Opacity crossfade hides the swap.
+        */}
+
+        {/* Intro 1 — fades out when transition fires */}
         <video
-          ref={videoRef}
-          src={isIntro2 ? intro2Src : intro1Src}
+          ref={video1Ref}
+          src={intro1Src}
           autoPlay
           muted
           playsInline
           preload="auto"
-          loop={isIntro2}
+          disablePictureInPicture
+          onTimeUpdate={handleTimeUpdate}
           onEnded={handleVideoEnded}
-          className="absolute inset-0 w-full h-full object-cover object-center"
+          className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-500 ${
+            isIntro2Active ? "opacity-0 pointer-events-none" : "opacity-100"
+          }`}
         />
+
+        {/* Intro 2 — preloads silently, fades in when transition fires */}
+        <video
+          ref={video2Ref}
+          src={intro2Src}
+          muted
+          playsInline
+          preload="auto"
+          loop
+          disablePictureInPicture
+          className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-500 ${
+            isIntro2Active ? "opacity-100" : "opacity-0 pointer-events-none"
+          }`}
+        />
+
         <div className="absolute inset-0 bg-background/20" />
 
         {/* Layout: empty left (video shows through) + gallery on right */}
